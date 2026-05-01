@@ -77,7 +77,8 @@ class Product(Base):
     name: Mapped[str] = mapped_column(String(160), nullable=False, index=True)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
-    sizes: Mapped[str] = mapped_column(String(120), nullable=False, default="")
+    # 20 размеров * 8 символов + 19 разделителей ", " = 198, берём 200 с запасом.
+    sizes: Mapped[str] = mapped_column(String(200), nullable=False, default="")
     image_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
     status: Mapped[ProductStatus] = mapped_column(
         Enum(ProductStatus, native_enum=False, length=16),
