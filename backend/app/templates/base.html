@@ -15,8 +15,12 @@
             </a>
             <nav class="nav">
                 <a href="/">Главная</a>
+                <a href="/catalog">Каталог</a>
                 {% if user %}
-                    {% if user.role.value == "buyer" %}<a href="/account">Личный кабинет</a>{% endif %}
+                    {% if user.role.value == "buyer" %}
+                        <a href="/cart">Корзина</a>
+                        <a href="/account">Личный кабинет</a>
+                    {% endif %}
                     {% if user.role.value == "seller" %}<a href="/seller">Витрина продавца</a>{% endif %}
                     {% if user.role.value == "admin" %}<a href="/admin">Админ-панель</a>{% endif %}
                     <span style="color: var(--muted);">{{ user.username }} · {{ user.role_label }}</span>

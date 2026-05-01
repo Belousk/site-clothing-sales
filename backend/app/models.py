@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -60,6 +60,10 @@ class User(Base):
         back_populates="seller",
         cascade="all, delete-orphan",
     )
+    cart_items: Mapped[list["CartItem"]] = relationship(
+        back_populates="buyer",
+        cascade="all, delete-orphan",
+    )
 
     @property
     def role_label(self) -> str:
@@ -108,3 +112,33 @@ class Product(Base):
     @property
     def sizes_list(self) -> list[str]:
         return [s.strip() for s in self.sizes.split(",") if s.strip()]
+
+
+class CartItem(Base):
+    __tablename__ = "cart_items"
+    __table_args__ = (UniqueConstraint("buyer_id", "product_id", name="uq_cart_buyer_product"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    buyer_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    product_id: Mapped[int] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    buyer: Mapped[User] = relationship(back_populates="cart_items")
+    product: Mapped[Product] = relationship()
+
+    @property
+    def line_total(self) -> Decimal:
+        return (self.product.price * self.quantity).quantize(Decimal("0.01"))
