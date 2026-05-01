@@ -11,11 +11,16 @@
 - Регистрация и вход для покупателя и продавца (роли `buyer`, `seller`).
 - Вход для администратора (роль `admin`, заводится через CLI-скрипт).
 - Сессионная аутентификация (cookie + подпись).
-- Заглушки личных кабинетов для каждой роли с переходами по ролям.
-- Базовая структура моделей, БД и миграций (`init_db` создаёт таблицы при старте).
+- Личные кабинеты для каждой роли с переходами по ролям.
+- **UC-6: Добавление товара продавцом** — форма с валидацией (название
+  непустое, цена &gt; 0), загрузка фото (JPEG/PNG/WebP/GIF до 5 МБ),
+  размеры через запятую. Товары создаются со статусом «На модерации»
+  (`pending`) — это подготовка к UC-7.
+- Список «Мои товары» для продавца со статусами модерации.
 
-Дальнейшие модули (каталог товаров, корзина, заказы, оплата, модерация заявок)
-будут реализованы в следующих итерациях согласно UC-1 … UC-7 из ТЗ.
+Дальнейшие модули (UC-2 каталог/корзина, UC-3 оформление заказа,
+UC-4 оплата, UC-5 отслеживание доставки, UC-7 модерация админом)
+будут реализованы в следующих итерациях.
 
 ## Структура
 
@@ -23,18 +28,23 @@
 backend/
 ├── app/
 │   ├── main.py            # FastAPI приложение
-│   ├── config.py          # Настройки (pydantic-settings)
+│   ├── config.py          # Настройки (pydantic-settings) + uploads_dir
 │   ├── database.py        # Engine + SessionLocal + init_db
-│   ├── models.py          # User, UserRole
+│   ├── models.py          # User, UserRole, Product, ProductStatus
 │   ├── security.py        # passlib/bcrypt
 │   ├── dependencies.py    # get_current_user
 │   ├── templating.py      # Jinja2Templates
 │   ├── routers/
-│   │   ├── pages.py       # /, /account, /seller, /admin
-│   │   └── auth.py        # /register, /login, /logout
-│   ├── templates/         # base, index, login, register, buyer/seller/admin
+│   │   ├── pages.py       # /, /account, /admin
+│   │   ├── auth.py        # /register, /login, /logout
+│   │   └── seller.py      # /seller, /seller/products[/new]
+│   ├── templates/
+│   │   ├── base.html, index.html, login.html, register.html
+│   │   ├── buyer.html, admin.html
+│   │   └── seller/        # dashboard, new_product, products
 │   └── static/styles.css  # Премиум-минимал стили
 ├── scripts/create_admin.py
+├── uploads/               # фото товаров (раздаётся через /uploads)
 ├── requirements.txt
 └── .env.example
 ```
@@ -87,9 +97,25 @@ python -m scripts.create_admin \
 1. Зарегистрируйтесь на `/register`, выбрав «Покупатель» — вы попадёте
    на `/account`.
 2. Выйдите, зарегистрируйтесь повторно с другим логином и ролью «Продавец»
-   — попадёте на `/seller`.
+   — попадёте на `/seller`. Откройте `/seller/products/new`, добавьте
+   товар (название, цена, размеры, фото) — он появится в `/seller/products`
+   со статусом «На модерации».
 3. Создайте администратора через `scripts/create_admin.py` и войдите
    на `/login` — попадёте на `/admin`.
+
+## UC-6: добавление товара (продавец)
+
+- `GET /seller/products/new` — форма добавления (только для роли
+  `seller`).
+- `POST /seller/products/new` — `multipart/form-data` с полями:
+  `name`, `price`, `sizes`, `description`, `image` (опционально).
+- Валидация: название непустое (≤160 символов), цена &gt; 0 (поддерживает
+  разделители `.` и `,`), фото — JPEG/PNG/WebP/GIF до 5 МБ.
+- Файлы сохраняются в `backend/uploads/` и раздаются по `/uploads/...`
+  через `StaticFiles`.
+- При успехе — редирект на `/seller/products`.
+- Товар создаётся со статусом `pending` (на модерации) — UC-7
+  превратит этот статус в `published` или `rejected`.
 
 ## Использование PostgreSQL (опционально)
 

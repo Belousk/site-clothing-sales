@@ -22,15 +22,6 @@ def buyer_account(request: Request, user: User | None = Depends(get_current_user
     return templates.TemplateResponse(request, "buyer.html", {"user": user})
 
 
-@router.get("/seller", response_class=HTMLResponse)
-def seller_dashboard(request: Request, user: User | None = Depends(get_current_user)):
-    if user is None:
-        return RedirectResponse(url="/login", status_code=303)
-    if user.role != UserRole.SELLER:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ только для продавцов.")
-    return templates.TemplateResponse(request, "seller.html", {"user": user})
-
-
 @router.get("/admin", response_class=HTMLResponse)
 def admin_dashboard(request: Request, user: User | None = Depends(get_current_user)):
     if user is None:

@@ -11,3 +11,7 @@ env/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Загруженные пользователями файлы (фото товаров)
+uploads/*
+!uploads/.gitkeep

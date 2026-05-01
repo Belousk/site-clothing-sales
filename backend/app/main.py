@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -9,6 +10,8 @@ from .config import settings
 from .database import init_db
 from .routers import auth as auth_router
 from .routers import pages as pages_router
+from .routers import seller as seller_router
+from .routers.seller import _RedirectToLogin
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -29,7 +32,14 @@ app.add_middleware(
     https_only=False,
 )
 
+@app.exception_handler(_RedirectToLogin)
+async def _redirect_to_login_handler(_request, _exc):  # noqa: ANN001
+    return RedirectResponse(url="/login", status_code=303)
+
+
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+app.mount("/uploads", StaticFiles(directory=str(settings.uploads_dir)), name="uploads")
 
 app.include_router(pages_router.router)
 app.include_router(auth_router.router)
+app.include_router(seller_router.router)
