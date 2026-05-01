@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Витрина продавца · Atelier{% endblock %}
+{% block content %}
+<section class="dashboard">
+    <div class="container">
+        <div class="dashboard__head">
+            <div>
+                <p class="dashboard__eyebrow">Продавец</p>
+                <h1>Витрина {{ user.username }}</h1>
+                <p class="dashboard__sub">
+                    Управляйте каталогом: добавляйте товары, редактируйте описания, контролируйте остатки и&nbsp;цены.
+                </p>
+            </div>
+        </div>
+
+        <div class="card-grid">
+            <article class="card">
+                <span class="tag">UC-6</span>
+                <h3>Добавление товара</h3>
+                <p>Название, цена, размеры, описание и фото. Товар уйдёт на модерацию администратору.</p>
+            </article>
+            <article class="card">
+                <span class="tag">Каталог</span>
+                <h3>Мои товары</h3>
+                <p>Список ваших товаров со статусами «На модерации», «Опубликован», «Отклонён».</p>
+            </article>
+            <article class="card">
+                <span class="tag">Аналитика</span>
+                <h3>Продажи</h3>
+                <p>Сводка заказов по вашим товарам появится после реализации модуля заказов.</p>
+            </article>
+        </div>
+
+        <div class="placeholder">
+            Это шаблон витрины продавца. Управление товарами и&nbsp;интеграция с&nbsp;модерацией будут добавлены далее.
+        </div>
+    </div>
+</section>
+{% endblock %}
