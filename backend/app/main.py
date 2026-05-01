@@ -8,6 +8,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from .config import settings
 from .database import init_db
+from .routers import admin as admin_router
 from .routers import auth as auth_router
 from .routers import pages as pages_router
 from .routers import seller as seller_router
@@ -43,3 +44,4 @@ app.mount("/uploads", StaticFiles(directory=str(settings.uploads_dir)), name="up
 app.include_router(pages_router.router)
 app.include_router(auth_router.router)
 app.include_router(seller_router.router)
+app.include_router(admin_router.router)
