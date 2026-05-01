@@ -8,32 +8,30 @@
                 <p class="dashboard__eyebrow">Покупатель</p>
                 <h1>Здравствуйте, {{ user.username }}</h1>
                 <p class="dashboard__sub">
-                    Здесь будет каталог, корзина и история заказов. Сейчас вы вошли как
-                    <strong>{{ user.role_label }}</strong>.
+                    Каталог одобренных товаров, корзина и&nbsp;будущие заказы.
                 </p>
             </div>
+            <a href="/catalog" class="btn btn--primary">В каталог</a>
         </div>
 
         <div class="card-grid">
             <article class="card">
-                <span class="tag">Каталог</span>
-                <h3>Просмотр одежды</h3>
-                <p>Выбирайте товары по размеру, цвету и категории. Появится на следующих этапах.</p>
+                <span class="tag">UC-2</span>
+                <h3>Каталог</h3>
+                <p>Просматривайте опубликованные товары, ищите по&nbsp;названию.</p>
+                <p style="margin-top:14px;"><a href="/catalog" class="btn btn--ghost">Открыть</a></p>
             </article>
             <article class="card">
-                <span class="tag">Корзина</span>
-                <h3>Корзина и оформление</h3>
-                <p>Добавляйте позиции и оформляйте заказ с указанием адреса доставки.</p>
+                <span class="tag">UC-2</span>
+                <h3>Корзина</h3>
+                <p>Изменяйте количество, удаляйте позиции, видите итоговую сумму.</p>
+                <p style="margin-top:14px;"><a href="/cart" class="btn btn--ghost">Перейти</a></p>
             </article>
             <article class="card">
-                <span class="tag">Доставка</span>
+                <span class="tag">Скоро</span>
                 <h3>Мои заказы</h3>
-                <p>Отслеживайте статус заказа: «В обработке», «В пути», «Доставлен».</p>
+                <p>Оформление, оплата и отслеживание доставки появятся в&nbsp;UC-3…UC-5.</p>
             </article>
-        </div>
-
-        <div class="placeholder">
-            Это шаблон личного кабинета покупателя. Каталог, корзина, оформление и оплата будут реализованы в&nbsp;следующих итерациях согласно UC&#8209;1…UC&#8209;5.
         </div>
     </div>
 </section>

@@ -11,18 +11,17 @@
             в&nbsp;одном месте.
         </p>
         <div class="hero__actions">
+            <a class="btn btn--primary" href="/catalog">Открыть каталог</a>
             {% if user %}
                 {% if user.role.value == "buyer" %}
-                    <a class="btn btn--primary" href="/account">Перейти в личный кабинет</a>
+                    <a class="btn btn--ghost" href="/cart">Корзина</a>
                 {% elif user.role.value == "seller" %}
-                    <a class="btn btn--primary" href="/seller">Открыть витрину продавца</a>
+                    <a class="btn btn--ghost" href="/seller">Витрина продавца</a>
                 {% else %}
-                    <a class="btn btn--primary" href="/admin">Открыть админ-панель</a>
+                    <a class="btn btn--ghost" href="/admin">Админ-панель</a>
                 {% endif %}
-                <a class="btn btn--ghost" href="/">Каталог появится позже</a>
             {% else %}
-                <a class="btn btn--primary" href="/register">Создать аккаунт</a>
-                <a class="btn btn--ghost" href="/login">У меня уже есть аккаунт</a>
+                <a class="btn btn--ghost" href="/login">Войти</a>
             {% endif %}
         </div>
     </div>

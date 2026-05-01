@@ -481,3 +481,85 @@ input[type="file"].input {
 }
 .detail-grid__info p { margin: 0 0 10px; line-height: 1.55; }
 .detail-actions { margin-top: 14px; }
+
+/* Поиск в каталоге */
+.search-bar {
+    display: flex;
+    gap: 10px;
+    margin: 0 0 28px;
+    flex-wrap: wrap;
+}
+.search-bar .input { flex: 1; min-width: 220px; }
+.product__image-link { display: block; }
+.product__title-link {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 120ms ease, color 120ms ease;
+}
+.product__title-link:hover { color: var(--accent); border-color: var(--accent); }
+
+.cart-add-form {
+    margin-top: 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.cart-add-form label { color: var(--muted); font-size: 13px; }
+
+/* Корзина */
+.cart-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 24px;
+}
+.cart-row {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr) auto auto auto;
+    gap: 16px;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+}
+.cart-row__image {
+    width: 88px;
+    height: 88px;
+    background: var(--surface-2);
+    border-radius: 10px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+}
+.cart-row__image img { width: 100%; height: 100%; object-fit: cover; }
+.cart-row__main h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+.cart-row__qty { display: flex; gap: 8px; align-items: center; }
+.cart-row__qty label { color: var(--muted); font-size: 12px; }
+.cart-row__qty .input { width: 80px; padding: 8px 10px; }
+.cart-row__total { font-weight: 600; font-variant-numeric: tabular-nums; min-width: 110px; text-align: right; }
+.cart-row__remove button {
+    width: 36px; height: 36px;
+    display: grid; place-items: center;
+    font-size: 18px;
+    line-height: 1;
+}
+@media (max-width: 720px) {
+    .cart-row { grid-template-columns: 64px 1fr; gap: 12px; }
+    .cart-row__image { width: 64px; height: 64px; }
+    .cart-row__qty, .cart-row__total, .cart-row__remove { grid-column: 1 / -1; }
+    .cart-row__total { text-align: left; }
+}
+.cart-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+.cart-total p { margin: 0; font-size: 18px; }
+.cart-total button[disabled] { opacity: 0.55; cursor: not-allowed; }

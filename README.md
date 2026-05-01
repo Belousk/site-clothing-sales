@@ -21,10 +21,14 @@
   по статусу, детальная карточка с действиями «Одобрить» / «Отклонить»
   (с обязательным указанием причины). Одобрение переводит товар в
   статус «Опубликован», отказ — в «Отклонён».
+- **UC-2: Публичный каталог + корзина покупателя** — `/catalog` со
+  списком опубликованных товаров и поиском по названию (регистронезависимый,
+  работает с кириллицей), `/catalog/{id}` с детальной карточкой,
+  `/cart` с управлением количеством, удалением позиций и итоговой суммой.
+  Кнопка «В корзину» доступна только покупателям.
 
-Дальнейшие модули (UC-2 каталог/корзина, UC-3 оформление заказа,
-UC-4 оплата, UC-5 отслеживание доставки) будут реализованы в
-следующих итерациях.
+Дальнейшие модули (UC-3 оформление заказа, UC-4 оплата,
+UC-5 отслеживание доставки) будут реализованы в следующих итерациях.
 
 ## Структура
 
@@ -34,7 +38,7 @@ backend/
 │   ├── main.py            # FastAPI приложение
 │   ├── config.py          # Настройки (pydantic-settings) + uploads_dir
 │   ├── database.py        # Engine + SessionLocal + init_db
-│   ├── models.py          # User, UserRole, Product, ProductStatus
+│   ├── models.py          # User, UserRole, Product, ProductStatus, CartItem
 │   ├── security.py        # passlib/bcrypt
 │   ├── dependencies.py    # get_current_user
 │   ├── templating.py      # Jinja2Templates
@@ -42,10 +46,14 @@ backend/
 │   │   ├── pages.py       # /, /account
 │   │   ├── auth.py        # /register, /login, /logout
 │   │   ├── seller.py      # /seller, /seller/products[/new]
+│   │   ├── catalog.py     # /catalog, /catalog/{id}
+│   │   ├── cart.py        # /cart, /cart/add, /cart/{id}/{update|remove}
 │   │   └── admin.py       # /admin, /admin/products[/{id}{/approve|/reject}]
 │   ├── templates/
 │   │   ├── base.html, index.html, login.html, register.html, buyer.html
 │   │   ├── seller/        # dashboard, new_product, products
+│   │   ├── catalog/       # list, detail
+│   │   ├── cart/          # view
 │   │   └── admin/         # dashboard, products_list, product_detail
 │   └── static/styles.css  # Премиум-минимал стили
 ├── scripts/create_admin.py
@@ -120,6 +128,26 @@ python -m scripts.create_admin \
   через `StaticFiles`.
 - При успехе — редирект на `/seller/products`.
 - Товар создаётся со статусом `pending` (на модерации).
+
+## UC-2: каталог и корзина (покупатель)
+
+- `GET /catalog?q=<строка>` — список опубликованных товаров с
+  опциональным поиском по подстроке имени. Поиск регистронезависимый
+  и поддерживает кириллицу (через регистрацию Python-овской `lower()`
+  как функции SQLite).
+- `GET /catalog/{id}` — детальная карточка опубликованного товара.
+  Для непубликованных и несуществующих — 404. Под покупателем виден
+  блок «Добавить в корзину» с выбором количества.
+- `GET /cart` — корзина покупателя. Под анонимом — редирект на
+  `/login`, под продавцом/админом — 403.
+- `POST /cart/add` — добавить товар (`product_id`, `quantity` 1–99).
+  При повторном добавлении количество суммируется (но не превышает 99).
+  404 если товар не существует или не опубликован.
+- `POST /cart/{id}/update` — изменить количество позиции (1–99).
+- `POST /cart/{id}/remove` — удалить позицию.
+- В корзине отображаются только позиции с актуальными опубликованными
+  товарами (если продавец удалит товар или модерация отклонит — позиция
+  скрывается, но в БД остаётся; чистится по мере необходимости).
 
 ## UC-7: модерация заявок (администратор)
 
