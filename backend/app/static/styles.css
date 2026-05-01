@@ -415,3 +415,69 @@ input[type="file"].input {
     margin: 6px 0 0;
     line-height: 1.5;
 }
+
+/* Фильтр статусов в админке */
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 28px;
+}
+.filter-bar__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    background: var(--surface);
+    transition: border-color 120ms ease, color 120ms ease;
+}
+.filter-bar__item:hover {
+    border-color: var(--accent);
+    color: var(--text);
+}
+.filter-bar__item--active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+.filter-bar__count {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
+}
+
+/* Детальная карточка заявки */
+.detail-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 28px;
+}
+@media (max-width: 760px) {
+    .detail-grid { grid-template-columns: 1fr; }
+}
+.detail-grid__image {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+    display: grid;
+    place-items: center;
+}
+.detail-grid__image img { width: 100%; height: 100%; object-fit: cover; }
+.detail-grid__info {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+}
+.detail-grid__info p { margin: 0 0 10px; line-height: 1.55; }
+.detail-actions { margin-top: 14px; }

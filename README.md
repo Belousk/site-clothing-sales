@@ -14,13 +14,17 @@
 - Личные кабинеты для каждой роли с переходами по ролям.
 - **UC-6: Добавление товара продавцом** — форма с валидацией (название
   непустое, цена &gt; 0), загрузка фото (JPEG/PNG/WebP/GIF до 5 МБ),
-  размеры через запятую. Товары создаются со статусом «На модерации»
-  (`pending`) — это подготовка к UC-7.
-- Список «Мои товары» для продавца со статусами модерации.
+  размеры через запятую. Товары создаются со статусом «На модерации».
+- Список «Мои товары» для продавца со статусами модерации и причиной
+  отказа (если заявка отклонена).
+- **UC-7: Модерация заявок администратором** — список заявок с фильтрами
+  по статусу, детальная карточка с действиями «Одобрить» / «Отклонить»
+  (с обязательным указанием причины). Одобрение переводит товар в
+  статус «Опубликован», отказ — в «Отклонён».
 
 Дальнейшие модули (UC-2 каталог/корзина, UC-3 оформление заказа,
-UC-4 оплата, UC-5 отслеживание доставки, UC-7 модерация админом)
-будут реализованы в следующих итерациях.
+UC-4 оплата, UC-5 отслеживание доставки) будут реализованы в
+следующих итерациях.
 
 ## Структура
 
@@ -35,13 +39,14 @@ backend/
 │   ├── dependencies.py    # get_current_user
 │   ├── templating.py      # Jinja2Templates
 │   ├── routers/
-│   │   ├── pages.py       # /, /account, /admin
+│   │   ├── pages.py       # /, /account
 │   │   ├── auth.py        # /register, /login, /logout
-│   │   └── seller.py      # /seller, /seller/products[/new]
+│   │   ├── seller.py      # /seller, /seller/products[/new]
+│   │   └── admin.py       # /admin, /admin/products[/{id}{/approve|/reject}]
 │   ├── templates/
-│   │   ├── base.html, index.html, login.html, register.html
-│   │   ├── buyer.html, admin.html
-│   │   └── seller/        # dashboard, new_product, products
+│   │   ├── base.html, index.html, login.html, register.html, buyer.html
+│   │   ├── seller/        # dashboard, new_product, products
+│   │   └── admin/         # dashboard, products_list, product_detail
 │   └── static/styles.css  # Премиум-минимал стили
 ├── scripts/create_admin.py
 ├── uploads/               # фото товаров (раздаётся через /uploads)
@@ -114,8 +119,23 @@ python -m scripts.create_admin \
 - Файлы сохраняются в `backend/uploads/` и раздаются по `/uploads/...`
   через `StaticFiles`.
 - При успехе — редирект на `/seller/products`.
-- Товар создаётся со статусом `pending` (на модерации) — UC-7
-  превратит этот статус в `published` или `rejected`.
+- Товар создаётся со статусом `pending` (на модерации).
+
+## UC-7: модерация заявок (администратор)
+
+- `GET /admin` — панель администратора со счётчиками статусов.
+- `GET /admin/products?status=pending|published|rejected|all` — список
+  заявок с фильтром по статусу (по умолчанию `pending`).
+- `GET /admin/products/{id}` — карточка заявки: фото, цена, размеры,
+  описание, продавец, действия модерации.
+- `POST /admin/products/{id}/approve` — переводит заявку в `published`,
+  очищает причину отказа. Доступно только для заявок в статусе `pending`
+  (иначе 409).
+- `POST /admin/products/{id}/reject` — `application/x-www-form-urlencoded`
+  с полем `reason` (обязательное, ≤500 символов). Переводит в `rejected`
+  и сохраняет причину. Также 409 если заявка уже не в `pending`.
+- После любого действия — редирект на `/admin/products?status=pending`.
+- Продавец видит причину отказа в `/seller/products`.
 
 ## Использование PostgreSQL (опционально)
 
