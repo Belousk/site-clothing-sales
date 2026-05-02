@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Заказ №{{ order.id }} · Atelier{% endblock %}
+{% block content %}
+<section class="dashboard">
+    <div class="container" style="max-width: 980px;">
+        <div class="dashboard__head">
+            <div>
+                <p class="dashboard__eyebrow">Покупатель · Заказ №{{ order.id }}</p>
+                <h1>
+                    {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}
+                    <span class="tag tag--{{ order.status.value }}" style="margin-left: 12px;">{{ order.status_label }}</span>
+                </h1>
+            </div>
+            <a href="/orders" class="btn btn--ghost">К списку</a>
+        </div>
+
+        <div class="checkout-grid">
+            <div>
+                <div class="card" style="margin-bottom: 16px;">
+                    <h3 style="margin-top: 0;">Состав заказа</h3>
+                    <ul class="checkout-items">
+                        {% for item in order.items %}
+                        <li>
+                            <span class="checkout-items__name">
+                                {{ item.product_name }}
+                                {% if item.sizes %}
+                                <span class="product__meta">· размеры: {{ item.sizes }}</span>
+                                {% endif %}
+                            </span>
+                            <span class="checkout-items__qty">{{ '%.2f'|format(item.product_price) }} ₽ × {{ item.quantity }}</span>
+                            <span class="checkout-items__total">{{ '%.2f'|format(item.line_total) }} ₽</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <p class="checkout-summary__total">Итого: <strong>{{ '%.2f'|format(order.total) }} ₽</strong></p>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-top: 0;">Доставка</h3>
+                    <p class="product__meta">
+                        {{ order.recipient_name }} · {{ order.recipient_phone }}<br/>
+                        {{ order.delivery_address }}
+                    </p>
+                    {% if order.comment %}
+                    <p class="product__meta">Комментарий: {{ order.comment }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <aside class="checkout-summary">
+                <h3>Статус</h3>
+                <p class="product__meta">{{ order.status_label }}</p>
+                {% if order.status.value == "created" %}
+                    <p style="margin-top: 12px;">
+                        <a href="/pay/{{ order.id }}" class="btn btn--primary">Оплатить</a>
+                    </p>
+                    <form method="post" action="/orders/{{ order.id }}/cancel"
+                          style="margin-top: 10px;">
+                        <button type="submit" class="btn btn--ghost">Отменить заказ</button>
+                    </form>
+                {% elif order.receipt %}
+                    <p class="product__meta" style="margin-top: 14px;">
+                        Чек №<br/><strong>{{ order.receipt.receipt_number }}</strong>
+                    </p>
+                    <p class="product__meta">
+                        Transaction&nbsp;ID:<br/><code>{{ order.receipt.transaction_id }}</code>
+                    </p>
+                    <p style="margin-top: 14px;">
+                        <a class="btn btn--primary" href="{{ order.receipt.pdf_url }}">Скачать чек (PDF)</a>
+                    </p>
+                {% endif %}
+            </aside>
+        </div>
+    </div>
+</section>
+{% endblock %}

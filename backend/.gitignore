@@ -15,3 +15,7 @@ env/
 # Загруженные пользователями файлы (фото товаров)
 uploads/*
 !uploads/.gitkeep
+
+# PDF чеков (UC-4)
+receipts/*
+!receipts/.gitkeep

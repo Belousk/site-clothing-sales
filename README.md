@@ -32,9 +32,20 @@
   работает с кириллицей), `/catalog/{id}` с детальной карточкой,
   `/cart` с управлением количеством, удалением позиций и итоговой суммой.
   Кнопка «В корзину» доступна только покупателям.
+- **UC-3: Оформление заказа покупателем** — `/checkout` с формой адреса
+  доставки (имя, телефон, адрес, комментарий), валидация полей. При
+  оформлении создаётся заказ со снапшотом товаров (имя/цена на момент
+  заказа), корзина очищается.
+- **UC-4: Имитация оплаты + чек** — `/pay/{order_id}` с формой карты
+  (учебная имитация, реальный шлюз не подключён). После «оплаты»
+  генерируется чек со собственным номером (`RCP-YYYYMMDD-XXXXXX`),
+  `transaction_id` и PDF-файлом, который покупатель может скачать
+  с детальной страницы заказа (`/orders/{id}`) или из списка
+  `/orders`. Скачивание защищено: владелец заказа или администратор.
+- Отмена неоплаченного заказа из его карточки (`/orders/{id}/cancel`).
 
-Дальнейшие модули (UC-3 оформление заказа, UC-4 оплата,
-UC-5 отслеживание доставки) будут реализованы в следующих итерациях.
+Дальнейшие модули (UC-5 отслеживание доставки) будут реализованы в
+следующих итерациях.
 
 ## Структура
 
@@ -44,26 +55,32 @@ backend/
 │   ├── main.py            # FastAPI приложение
 │   ├── config.py          # Настройки (pydantic-settings) + uploads_dir
 │   ├── database.py        # Engine + SessionLocal + init_db
-│   ├── models.py          # User, UserRole, Product, ProductStatus, CartItem
+│   ├── models.py          # User, Product, CartItem, Order, OrderItem, Receipt
 │   ├── security.py        # passlib/bcrypt
 │   ├── dependencies.py    # get_current_user
 │   ├── templating.py      # Jinja2Templates
 │   ├── routers/
 │   │   ├── pages.py       # /, /account
 │   │   ├── auth.py        # /register, /login, /logout
-│   │   ├── seller.py      # /seller, /seller/products[/new]
+│   │   ├── seller.py      # /seller, /seller/products[/new|/{id}/edit]
 │   │   ├── catalog.py     # /catalog, /catalog/{id}
 │   │   ├── cart.py        # /cart, /cart/add, /cart/{id}/{update|remove}
+│   │   ├── orders.py      # /checkout, /pay/{id}, /orders, /receipts/{file}
 │   │   └── admin.py       # /admin, /admin/products[/{id}{/approve|/reject}]
+│   ├── services/
+│   │   └── receipts.py    # PDF чека (reportlab) + номера и transaction_id
 │   ├── templates/
 │   │   ├── base.html, index.html, login.html, register.html, buyer.html
-│   │   ├── seller/        # dashboard, new_product, products
+│   │   ├── seller/        # dashboard, new_product, edit_product, products
 │   │   ├── catalog/       # list, detail
 │   │   ├── cart/          # view
+│   │   ├── checkout/      # address, pay
+│   │   ├── orders/        # list, detail
 │   │   └── admin/         # dashboard, products_list, product_detail
 │   └── static/styles.css  # Премиум-минимал стили
 ├── scripts/create_admin.py
 ├── uploads/               # фото товаров (раздаётся через /uploads)
+├── receipts/              # PDF чеков (скачиваются через /receipts/{filename})
 ├── requirements.txt
 └── .env.example
 ```

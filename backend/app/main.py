@@ -12,6 +12,7 @@ from .routers import admin as admin_router
 from .routers import auth as auth_router
 from .routers import cart as cart_router
 from .routers import catalog as catalog_router
+from .routers import orders as orders_router
 from .routers import pages as pages_router
 from .routers import seller as seller_router
 from .routers.seller import _RedirectToLogin
@@ -47,5 +48,6 @@ app.include_router(pages_router.router)
 app.include_router(auth_router.router)
 app.include_router(catalog_router.router)
 app.include_router(cart_router.router)
+app.include_router(orders_router.router)
 app.include_router(seller_router.router)
 app.include_router(admin_router.router)
