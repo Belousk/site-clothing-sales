@@ -355,14 +355,23 @@ def edit_product_submit(
         )
 
     assert data.price is not None
+    old_filename = product.image_filename
     product.name = data.name
     product.price = data.price
     product.sizes = data.sizes
     product.description = data.description
+    image_changed = False
     if new_filename is not None:
         product.image_filename = new_filename
+        image_changed = True
     elif remove_image == "1":
         product.image_filename = None
+        image_changed = True
     db.commit()
+
+    # Удаляем старый файл с диска уже после коммита, чтобы при сбое БД
+    # не остаться без оригинала. missing_ok=True — на случай ручной чистки.
+    if image_changed and old_filename:
+        (settings.uploads_dir / old_filename).unlink(missing_ok=True)
 
     return RedirectResponse(url="/seller/products", status_code=303)
