@@ -20,6 +20,9 @@
                     <h3>
                         <a href="/orders/{{ o.id }}" class="product__title-link">Заказ №{{ o.id }}</a>
                         <span class="tag tag--{{ o.status.value }}" style="margin-left: 10px;">{{ o.status_label }}</span>
+                        {% if o.delivery_visible %}
+                        <span class="tag tag--delivery-{{ o.delivery_status.value }}" style="margin-left: 6px;">{{ o.delivery_status_label }}</span>
+                        {% endif %}
                     </h3>
                     <p class="product__meta">
                         {{ o.created_at.strftime('%d.%m.%Y %H:%M') }} ·

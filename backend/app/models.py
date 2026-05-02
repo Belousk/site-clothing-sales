@@ -164,6 +164,32 @@ ORDER_STATUS_LABELS_RU: dict[OrderStatus, str] = {
 }
 
 
+class DeliveryStatus(str, enum.Enum):
+    """Статус доставки заказа (UC-5). Имеет смысл только после оплаты."""
+
+    PROCESSING = "processing"  # ждёт отправки
+    SHIPPED = "shipped"  # передан в доставку
+    IN_TRANSIT = "in_transit"  # в пути
+    DELIVERED = "delivered"  # доставлен
+
+
+# Допустимые переходы вперёд по конвейеру; назад двигаться нельзя.
+DELIVERY_STATUS_ORDER: list[DeliveryStatus] = [
+    DeliveryStatus.PROCESSING,
+    DeliveryStatus.SHIPPED,
+    DeliveryStatus.IN_TRANSIT,
+    DeliveryStatus.DELIVERED,
+]
+
+
+DELIVERY_STATUS_LABELS_RU: dict[DeliveryStatus, str] = {
+    DeliveryStatus.PROCESSING: "Готовится к отправке",
+    DeliveryStatus.SHIPPED: "Передан в доставку",
+    DeliveryStatus.IN_TRANSIT: "В пути",
+    DeliveryStatus.DELIVERED: "Доставлен",
+}
+
+
 class Order(Base):
     __tablename__ = "orders"
 
@@ -191,6 +217,19 @@ class Order(Base):
         nullable=False,
     )
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # UC-5: статус доставки. Активен после перехода заказа в PAID.
+    delivery_status: Mapped[DeliveryStatus] = mapped_column(
+        Enum(DeliveryStatus, native_enum=False, length=16),
+        nullable=False,
+        default=DeliveryStatus.PROCESSING,
+        index=True,
+    )
+    delivery_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    shipped_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     buyer: Mapped[User] = relationship(back_populates="orders")
     items: Mapped[list["OrderItem"]] = relationship(
@@ -207,6 +246,15 @@ class Order(Base):
     @property
     def status_label(self) -> str:
         return ORDER_STATUS_LABELS_RU.get(self.status, self.status.value)
+
+    @property
+    def delivery_status_label(self) -> str:
+        return DELIVERY_STATUS_LABELS_RU.get(self.delivery_status, self.delivery_status.value)
+
+    @property
+    def delivery_visible(self) -> bool:
+        """Имеет смысл показывать доставку только после оплаты."""
+        return self.status == OrderStatus.PAID
 
 
 class OrderItem(Base):

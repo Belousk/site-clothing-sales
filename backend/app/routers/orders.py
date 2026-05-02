@@ -259,6 +259,8 @@ def pay_submit(
     # Меняем статус и фиксируем чек.
     order.status = OrderStatus.PAID
     order.paid_at = issued_at
+    # UC-5: после оплаты конвейер доставки активен; стартуем с PROCESSING.
+    order.delivery_updated_at = issued_at
     pdf_filename = render_receipt_pdf(order, receipt_number, transaction_id, issued_at)
     receipt = Receipt(
         order_id=order.id,

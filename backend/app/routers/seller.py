@@ -16,7 +16,16 @@ from sqlalchemy.orm import Session
 from ..config import settings
 from ..database import get_db
 from ..dependencies import get_current_user
-from ..models import Product, ProductStatus, User, UserRole
+from ..models import (
+    Order,
+    OrderItem,
+    OrderStatus,
+    Product,
+    ProductStatus,
+    User,
+    UserRole,
+)
+from ..services.delivery import advance_delivery_status
 from ..templating import templates
 
 router = APIRouter(prefix="/seller", tags=["seller"])
@@ -375,3 +384,85 @@ def edit_product_submit(
         (settings.uploads_dir / old_filename).unlink(missing_ok=True)
 
     return RedirectResponse(url="/seller/products", status_code=303)
+
+
+@router.post("/products/{product_id}/delete")
+def delete_product(
+    product_id: int,
+    user: User | None = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Удаление заявки на товар. Доступно только владельцу и только пока pending."""
+    seller = _require_seller(user)
+    product = _own_product_or_404(db, seller, product_id)
+    if product.status != ProductStatus.PENDING:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Удалять можно только товары в статусе «На модерации».",
+        )
+    old_filename = product.image_filename
+    db.delete(product)
+    db.commit()
+    if old_filename:
+        (settings.uploads_dir / old_filename).unlink(missing_ok=True)
+    return RedirectResponse(url="/seller/products", status_code=303)
+
+
+# ---------- UC-5: заказы и доставка глазами продавца ----------
+
+
+def _orders_with_seller_items(db: Session, seller_id: int) -> list[Order]:
+    """Заказы (paid+), в которых есть хотя бы одна позиция продавца."""
+    return (
+        db.query(Order)
+        .join(OrderItem, OrderItem.order_id == Order.id)
+        .join(Product, OrderItem.product_id == Product.id)
+        .filter(Product.seller_id == seller_id)
+        .filter(Order.status == OrderStatus.PAID)
+        .order_by(desc(Order.created_at))
+        .distinct()
+        .all()
+    )
+
+
+def _seller_owns_order(db: Session, seller_id: int, order: Order) -> bool:
+    return (
+        db.query(OrderItem)
+        .join(Product, OrderItem.product_id == Product.id)
+        .filter(OrderItem.order_id == order.id, Product.seller_id == seller_id)
+        .first()
+        is not None
+    )
+
+
+@router.get("/orders", response_class=HTMLResponse)
+def list_seller_orders(
+    request: Request,
+    user: User | None = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    seller = _require_seller(user)
+    orders = _orders_with_seller_items(db, seller.id)
+    return templates.TemplateResponse(
+        request,
+        "seller/orders_list.html",
+        {"user": seller, "orders": orders},
+    )
+
+
+@router.post("/orders/{order_id}/delivery")
+def update_seller_order_delivery(
+    order_id: int,
+    delivery_status_value: str = Form(..., alias="delivery_status"),
+    user: User | None = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    seller = _require_seller(user)
+    order = db.get(Order, order_id)
+    # 404 — и для несуществующего заказа, и для заказа без позиций продавца
+    # (не палим само существование чужого заказа).
+    if order is None or not _seller_owns_order(db, seller.id, order):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Заказ не найден.")
+    advance_delivery_status(order, delivery_status_value)
+    db.commit()
+    return RedirectResponse(url="/seller/orders", status_code=303)
