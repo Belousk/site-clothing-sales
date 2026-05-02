@@ -10,11 +10,14 @@ from ..database import get_db
 from ..dependencies import get_current_user
 from ..models import (
     PRODUCT_STATUS_LABELS_RU,
+    Order,
+    OrderStatus,
     Product,
     ProductStatus,
     User,
     UserRole,
 )
+from ..services.delivery import advance_delivery_status
 from ..templating import templates
 from .seller import _RedirectToLogin
 
@@ -192,3 +195,43 @@ def reject_product(
     product.rejection_reason = reason_clean
     db.commit()
     return RedirectResponse(url="/admin/products?status=pending", status_code=303)
+
+
+# ---------- UC-5: управление доставкой админом ----------
+
+
+@router.get("/orders", response_class=HTMLResponse)
+def list_admin_orders(
+    request: Request,
+    user: User | None = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    admin = _require_admin(user)
+    orders = (
+        db.query(Order)
+        .options(selectinload(Order.buyer), selectinload(Order.items))
+        .filter(Order.status == OrderStatus.PAID)
+        .order_by(desc(Order.created_at))
+        .all()
+    )
+    return templates.TemplateResponse(
+        request,
+        "admin/orders_list.html",
+        {"user": admin, "orders": orders},
+    )
+
+
+@router.post("/orders/{order_id}/delivery")
+def update_admin_order_delivery(
+    order_id: int,
+    delivery_status_value: str = Form(..., alias="delivery_status"),
+    user: User | None = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_admin(user)
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Заказ не найден.")
+    advance_delivery_status(order, delivery_status_value)
+    db.commit()
+    return RedirectResponse(url="/admin/orders", status_code=303)

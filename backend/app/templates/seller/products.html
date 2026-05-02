@@ -39,9 +39,16 @@
                         <p style="color: var(--danger); font-size: 13px;">Причина отказа: {{ p.rejection_reason }}</p>
                     {% endif %}
                     {% if p.status.value == "pending" %}
-                        <p style="margin-top: 12px;">
+                        <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
                             <a href="/seller/products/{{ p.id }}/edit" class="btn btn--ghost">Редактировать</a>
-                        </p>
+                            <form method="post" action="/seller/products/{{ p.id }}/delete"
+                                  onsubmit="return confirm('Удалить заявку на товар «{{ p.name }}»?');"
+                                  style="display: inline;">
+                                <button type="submit" class="btn btn--ghost" style="color: var(--danger); border-color: rgba(220, 90, 90, 0.4);">
+                                    Удалить
+                                </button>
+                            </form>
+                        </div>
                     {% endif %}
                 </div>
             </article>

@@ -359,6 +359,45 @@ img { max-width: 100%; display: block; }
 .tag--paid { background: rgba(95, 207, 153, 0.14); color: #5fcf99; }
 .tag--cancelled { background: rgba(255, 107, 107, 0.12); color: #ff8e8e; }
 
+/* Статусы доставки (UC-5) */
+.tag--delivery-processing { background: rgba(255, 200, 113, 0.10); color: #ffc871; }
+.tag--delivery-shipped    { background: rgba(120, 170, 255, 0.14); color: #8ab4ff; }
+.tag--delivery-in_transit { background: rgba(120, 200, 240, 0.14); color: #7dc7e8; }
+.tag--delivery-delivered  { background: rgba(95, 207, 153, 0.18); color: #5fcf99; }
+
+.delivery-track {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.delivery-track__step {
+    position: relative;
+    padding-left: 22px;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 14px;
+}
+.delivery-track__step::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 6px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: transparent;
+}
+.delivery-track__step--done {
+    color: var(--text);
+}
+.delivery-track__step--done::before {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
 /* Оформление заказа (UC-3) */
 .checkout-grid {
     display: grid;
