@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     session_max_age: int = 60 * 60 * 24 * 7  # 7 дней
 
     uploads_dir: Path = Path("uploads")
+    receipts_dir: Path = Path("receipts")
     max_image_size_bytes: int = 5 * 1024 * 1024  # 5 МБ
     allowed_image_types: tuple[str, ...] = (
         "image/jpeg",
@@ -25,3 +26,4 @@ class Settings(BaseSettings):
 
 settings = Settings()
 settings.uploads_dir.mkdir(parents=True, exist_ok=True)
+settings.receipts_dir.mkdir(parents=True, exist_ok=True)

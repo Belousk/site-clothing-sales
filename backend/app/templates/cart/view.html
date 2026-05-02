@@ -8,7 +8,7 @@
                 <p class="dashboard__eyebrow">Покупатель · UC-2</p>
                 <h1>Корзина</h1>
                 <p class="dashboard__sub">
-                    Изменяйте количество, удаляйте позиции. Оформление заказа появится в&nbsp;UC-3.
+                    Изменяйте количество, удаляйте позиции, переходите к&nbsp;оформлению заказа.
                 </p>
             </div>
             <a href="/catalog" class="btn btn--ghost">Продолжить покупки</a>
@@ -50,7 +50,7 @@
 
         <div class="cart-total">
             <p>Итого: <strong>{{ '%.2f'|format(total) }} ₽</strong></p>
-            <button class="btn btn--primary" disabled title="Появится в UC-3">Оформить заказ</button>
+            <a class="btn btn--primary" href="/checkout">Оформить заказ</a>
         </div>
         {% else %}
         <div class="placeholder">

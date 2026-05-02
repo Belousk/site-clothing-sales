@@ -64,6 +64,10 @@ class User(Base):
         back_populates="buyer",
         cascade="all, delete-orphan",
     )
+    orders: Mapped[list["Order"]] = relationship(
+        back_populates="buyer",
+        cascade="all, delete-orphan",
+    )
 
     @property
     def role_label(self) -> str:
@@ -143,3 +147,121 @@ class CartItem(Base):
     @property
     def line_total(self) -> Decimal:
         return (self.product.price * self.quantity).quantize(Decimal("0.01"))
+
+
+class OrderStatus(str, enum.Enum):
+    """Статус заказа (UC-3 / UC-4)."""
+
+    CREATED = "created"  # оформлен, ожидает оплаты
+    PAID = "paid"  # оплачен (UC-4)
+    CANCELLED = "cancelled"  # отменён до оплаты
+
+
+ORDER_STATUS_LABELS_RU: dict[OrderStatus, str] = {
+    OrderStatus.CREATED: "Ожидает оплаты",
+    OrderStatus.PAID: "Оплачен",
+    OrderStatus.CANCELLED: "Отменён",
+}
+
+
+class Order(Base):
+    __tablename__ = "orders"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    buyer_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    status: Mapped[OrderStatus] = mapped_column(
+        Enum(OrderStatus, native_enum=False, length=16),
+        nullable=False,
+        default=OrderStatus.CREATED,
+        index=True,
+    )
+    total: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    # Снапшот адреса доставки (на момент оформления).
+    recipient_name: Mapped[str] = mapped_column(String(160), nullable=False)
+    recipient_phone: Mapped[str] = mapped_column(String(40), nullable=False)
+    delivery_address: Mapped[str] = mapped_column(String(500), nullable=False)
+    comment: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    buyer: Mapped[User] = relationship(back_populates="orders")
+    items: Mapped[list["OrderItem"]] = relationship(
+        back_populates="order",
+        cascade="all, delete-orphan",
+        order_by="OrderItem.id",
+    )
+    receipt: Mapped["Receipt | None"] = relationship(
+        back_populates="order",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
+
+    @property
+    def status_label(self) -> str:
+        return ORDER_STATUS_LABELS_RU.get(self.status, self.status.value)
+
+
+class OrderItem(Base):
+    """Позиция заказа: снапшот товара (имя, цена) + количество."""
+
+    __tablename__ = "order_items"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    order_id: Mapped[int] = mapped_column(
+        ForeignKey("orders.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    product_id: Mapped[int | None] = mapped_column(
+        ForeignKey("products.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    product_name: Mapped[str] = mapped_column(String(160), nullable=False)
+    product_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    sizes: Mapped[str] = mapped_column(String(200), nullable=False, default="")
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    order: Mapped[Order] = relationship(back_populates="items")
+    product: Mapped[Product | None] = relationship()
+
+    @property
+    def line_total(self) -> Decimal:
+        return (self.product_price * self.quantity).quantize(Decimal("0.01"))
+
+
+class Receipt(Base):
+    """Чек об оплате заказа (UC-4)."""
+
+    __tablename__ = "receipts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    order_id: Mapped[int] = mapped_column(
+        ForeignKey("orders.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+    receipt_number: Mapped[str] = mapped_column(String(40), unique=True, nullable=False)
+    transaction_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    pdf_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    issued_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    order: Mapped[Order] = relationship(back_populates="receipt")
+
+    @property
+    def pdf_url(self) -> str:
+        """Относительный URL для скачивания PDF (см. /receipts/{filename})."""
+        return f"/receipts/{self.pdf_filename}"
