@@ -46,7 +46,12 @@ def advance_delivery_status(order: Order, raw_status: str) -> None:
     now = datetime.now(timezone.utc)
     order.delivery_status = target
     order.delivery_updated_at = now
-    if target == DeliveryStatus.SHIPPED and order.shipped_at is None:
+    # UI допускает прыжок из processing сразу в in_transit/delivered.
+    # Если перешли через SHIPPED, всё равно бэкфиллим shipped_at —
+    # иначе у покупателя в трекере шаг «Передан в доставку» останется
+    # пустым между уже завершёнными шагами.
+    shipped_idx = DELIVERY_STATUS_ORDER.index(DeliveryStatus.SHIPPED)
+    if target_idx >= shipped_idx and order.shipped_at is None:
         order.shipped_at = now
     if target == DeliveryStatus.DELIVERED and order.delivered_at is None:
         order.delivered_at = now
