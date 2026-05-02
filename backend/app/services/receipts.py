@@ -4,6 +4,7 @@ from __future__ import annotations
 import secrets
 from datetime import datetime, timezone
 from pathlib import Path
+from xml.sax.saxutils import escape as xml_escape
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -29,7 +30,7 @@ _FONT_BOLD_NAME = "DejaVuSans-Bold"
 
 def _register_unicode_font() -> tuple[str, str]:
     """Регистрирует шрифт с поддержкой кириллицы. Один раз за процесс."""
-    global _FONT_REGISTERED
+    global _FONT_REGISTERED, _FONT_NAME, _FONT_BOLD_NAME
     if _FONT_REGISTERED:
         return _FONT_NAME, _FONT_BOLD_NAME
 
@@ -47,9 +48,13 @@ def _register_unicode_font() -> tuple[str, str]:
             _FONT_REGISTERED = True
             return _FONT_NAME, _FONT_BOLD_NAME
 
-    # Fallback: встроенный Helvetica (без кириллицы — но не упадёт).
+    # Fallback: встроенный Helvetica (кириллицы не будет, но не упадёт).
+    # Обязательно перезаписываем глобалы, иначе на втором вызове ранний return
+    # отдаст незарегистрированный 'DejaVuSans' и reportlab упадёт.
+    _FONT_NAME = "Helvetica"
+    _FONT_BOLD_NAME = "Helvetica-Bold"
     _FONT_REGISTERED = True
-    return "Helvetica", "Helvetica-Bold"
+    return _FONT_NAME, _FONT_BOLD_NAME
 
 
 def generate_receipt_number(now: datetime | None = None) -> str:
@@ -101,23 +106,25 @@ def render_receipt_pdf(
         title=f"Чек {receipt_number}",
     )
 
+    # reportlab Paragraph интерпретирует строку как XML — чтобы пользовательские
+    # `<`, `>`, `&` не валили генерацию, экранируем все динамические значения.
     story: list = []
     story.append(Paragraph("ATELIER · ИНТЕРНЕТ-МАГАЗИН ОДЕЖДЫ", eyebrow))
-    story.append(Paragraph(f"Чек {receipt_number}", title))
+    story.append(Paragraph(f"Чек {xml_escape(receipt_number)}", title))
     story.append(Paragraph(
         f"Дата выдачи: {issued_at.strftime('%d.%m.%Y %H:%M')} (UTC)",
         body,
     ))
     story.append(Paragraph(f"Заказ №{order.id}", body))
-    story.append(Paragraph(f"ID транзакции: {transaction_id}", body))
+    story.append(Paragraph(f"ID транзакции: {xml_escape(transaction_id)}", body))
     story.append(Spacer(1, 10 * mm))
 
     story.append(Paragraph("Получатель", body_bold))
-    story.append(Paragraph(order.recipient_name, body))
-    story.append(Paragraph(order.recipient_phone, body))
-    story.append(Paragraph(order.delivery_address, body))
+    story.append(Paragraph(xml_escape(order.recipient_name), body))
+    story.append(Paragraph(xml_escape(order.recipient_phone), body))
+    story.append(Paragraph(xml_escape(order.delivery_address), body))
     if order.comment:
-        story.append(Paragraph(f"Комментарий: {order.comment}", body))
+        story.append(Paragraph(f"Комментарий: {xml_escape(order.comment)}", body))
     story.append(Spacer(1, 8 * mm))
 
     table_header = ["№", "Товар", "Размеры", "Цена, ₽", "Кол-во", "Сумма, ₽"]
