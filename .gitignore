@@ -1,0 +1,7 @@
+# Корневой .env с секретами для docker compose
+.env
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store

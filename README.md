@@ -67,7 +67,101 @@ frontend/                      # Vite + React + TypeScript SPA
 └── tsconfig.json
 ```
 
-## Запуск (Windows / PowerShell)
+## Запуск через Docker Compose (быстрый путь)
+
+Подходит, если нужно поднять всё одной командой и не возиться с
+Python/Node локально. Требуется только Docker Desktop (Windows/macOS) или
+Docker Engine + `docker compose` (Linux).
+
+```powershell
+cd path\to\site-clothing-sales
+
+# 1) Создать .env из примера (можно отредактировать порт/секрет)
+copy .env.example .env
+
+# 2) Поднять backend + frontend
+docker compose up -d --build
+
+# 3) Создать администратора (один раз; пароль поменяйте)
+docker compose exec backend `
+  python -m scripts.create_admin --username admin --email admin@example.com --password "changeme123"
+```
+
+Откройте **http://127.0.0.1:8080** — это nginx, который раздаёт SPA и
+проксирует `/api`, `/uploads`, `/receipts` на FastAPI. Порт настраивается
+в `.env` через `FRONTEND_PORT`.
+
+Полезные команды:
+
+```powershell
+docker compose ps                 # статус контейнеров
+docker compose logs -f backend    # логи бэка
+docker compose logs -f frontend   # логи nginx
+docker compose restart backend    # рестарт после изменений в .env
+docker compose down               # остановить (volumes сохранятся)
+docker compose down -v            # остановить и стереть БД/uploads/receipts
+docker compose pull && docker compose up -d --build   # обновить образы
+```
+
+Файлы и БД лежат в Docker-volumes:
+- `backend_data` — SQLite-БД (`clothing_sales.db`).
+- `backend_uploads` — фото товаров.
+- `backend_receipts` — PDF-чеки.
+
+Чтобы переключиться на PostgreSQL — в `.env` поправьте `DATABASE_URL`,
+раскомментируйте `POSTGRES_*` и поднимите профиль:
+
+```powershell
+docker compose --profile postgres up -d --build
+```
+
+### Как подтянуть из git и переподнять
+
+```powershell
+cd path\to\site-clothing-sales
+git fetch origin
+git checkout main                 # или нужную ветку
+git pull
+docker compose up -d --build      # пересобрать образы и перезапустить
+```
+
+### Откат, если что-то сломалось
+
+1. **Просто вернуться на main** (если разрабатывали в ветке):
+   ```powershell
+   docker compose down
+   git checkout main
+   git pull
+   docker compose up -d --build
+   ```
+2. **Откатить уже мерженный PR** — в GitHub нажать «Revert» на PR
+   (создастся обратный PR), либо локально:
+   ```powershell
+   git checkout main
+   git pull
+   git revert -m 1 <merge-commit-sha>
+   git push origin main
+   docker compose up -d --build
+   ```
+3. **Совсем чистый сброс** (удалит данные):
+   ```powershell
+   docker compose down -v --rmi all      # стереть контейнеры, volumes и образы
+   git checkout main
+   git pull
+   docker compose up -d --build
+   ```
+4. **Старая SSR-версия** (до разделения backend/frontend) — это коммит
+   `9f1f57a` на `main` (мерж PR #8). Если этот PR ещё не смержен, просто
+   `git checkout main` и работайте с прошлой версией:
+   ```powershell
+   git checkout main
+   git pull
+   ```
+   Если уже смержен и нужно полностью вернуться к SSR — сделайте «Revert»
+   через GitHub-UI. Силой ресетить master на старый коммит можно, но
+   только если вы уверены, что никто другой не зависит от истории.
+
+## Запуск без Docker (Windows / PowerShell)
 
 > На macOS/Linux замените `python` → `python3` и используйте
 > `source .venv/bin/activate` вместо `.\.venv\Scripts\Activate.ps1`.
