@@ -127,13 +127,14 @@ def render_receipt_pdf(
         story.append(Paragraph(f"Комментарий: {xml_escape(order.comment)}", body))
     story.append(Spacer(1, 8 * mm))
 
-    table_header = ["№", "Товар", "Размеры", "Цена, ₽", "Кол-во", "Сумма, ₽"]
+    table_header = ["№", "Товар", "Размер", "Цена, ₽", "Кол-во", "Сумма, ₽"]
     table_rows: list[list[str]] = [table_header]
     for idx, item in enumerate(order.items, start=1):
+        size_display = item.selected_size if item.selected_size else (item.sizes or "—")
         table_rows.append([
             str(idx),
             item.product_name,
-            item.sizes or "—",
+            size_display,
             f"{item.product_price:.2f}",
             str(item.quantity),
             f"{item.line_total:.2f}",
