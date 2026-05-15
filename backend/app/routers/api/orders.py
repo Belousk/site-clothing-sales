@@ -53,7 +53,7 @@ def _active_cart(db: Session, buyer_id: int) -> list[CartItem]:
 def _own_order_or_404(db: Session, buyer: User, order_id: int) -> Order:
     order = (
         db.query(Order)
-        .options(selectinload(Order.items), selectinload(Order.receipt))
+        .options(selectinload(Order.items).selectinload(OrderItem.product), selectinload(Order.receipt))
         .filter(Order.id == order_id, Order.buyer_id == buyer.id)
         .first()
     )
@@ -114,6 +114,14 @@ def checkout(
     if len(comment_clean) > COMMENT_MAX:
         raise HTTPException(status_code=400, detail=f"Комментарий не должен быть длиннее {COMMENT_MAX} символов.")
 
+    for ci in items:
+        if ci.product.stock < ci.quantity:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Недостаточно товара «{ci.product.name}» на складе "
+                f"(доступно {ci.product.stock}, в корзине {ci.quantity}).",
+            )
+
     total = sum((i.line_total for i in items), Decimal("0.00"))
     order = Order(
         buyer_id=buyer.id,
@@ -127,6 +135,7 @@ def checkout(
     db.add(order)
     db.flush()
     for ci in items:
+        ci.product.stock -= ci.quantity
         db.add(
             OrderItem(
                 order_id=order.id,
@@ -194,6 +203,9 @@ def cancel(
     if order.status != OrderStatus.CREATED:
         raise HTTPException(status_code=409, detail="Отменить можно только неоплаченный заказ.")
     order.status = OrderStatus.CANCELLED
+    for oi in order.items:
+        if oi.product is not None:
+            oi.product.stock += oi.quantity
     db.commit()
     db.refresh(order)
     return OrderOut.from_model(order)

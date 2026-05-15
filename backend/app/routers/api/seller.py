@@ -100,15 +100,27 @@ def _validate_sizes(raw: str) -> str:
     return ", ".join(cleaned)
 
 
+def _parse_stock(raw: str) -> int:
+    raw = raw.strip()
+    try:
+        value = int(raw)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Остаток должен быть целым числом.") from None
+    if value < 0:
+        raise HTTPException(status_code=400, detail="Остаток не может быть отрицательным.")
+    return value
+
+
 @dataclass
 class _ProductInput:
     name: str
     price: Decimal
     sizes: str
     description: str
+    stock: int
 
 
-def _validate_basic(name: str, price: str, sizes: str, description: str) -> _ProductInput:
+def _validate_basic(name: str, price: str, sizes: str, description: str, stock: str) -> _ProductInput:
     name_clean = name.strip()
     if not name_clean:
         raise HTTPException(status_code=400, detail="Название не может быть пустым.")
@@ -125,7 +137,8 @@ def _validate_basic(name: str, price: str, sizes: str, description: str) -> _Pro
             status_code=400,
             detail=f"Описание не должно быть длиннее {DESCRIPTION_MAX_LENGTH} символов.",
         )
-    return _ProductInput(name_clean, price_value, sizes_clean, description_clean)
+    stock_value = _parse_stock(stock)
+    return _ProductInput(name_clean, price_value, sizes_clean, description_clean, stock_value)
 
 
 def _own_product_or_404(db: Session, seller: User, product_id: int) -> Product:
@@ -176,11 +189,12 @@ def create_product(
     price: str = Form(...),
     sizes: str = Form(""),
     description: str = Form(""),
+    stock: str = Form("0"),
     image: UploadFile = File(None),
     seller: User = Depends(require_seller),
     db: Session = Depends(get_db),
 ):
-    data = _validate_basic(name, price, sizes, description)
+    data = _validate_basic(name, price, sizes, description, stock)
     saved_filename = _save_upload(image)
 
     product = Product(
@@ -188,6 +202,7 @@ def create_product(
         description=data.description,
         price=data.price,
         sizes=data.sizes,
+        stock=data.stock,
         image_filename=saved_filename,
         status=ProductStatus.PENDING,
         seller_id=seller.id,
@@ -205,6 +220,7 @@ def edit_product(
     price: str = Form(...),
     sizes: str = Form(""),
     description: str = Form(""),
+    stock: str = Form("0"),
     image: UploadFile = File(None),
     remove_image: str = Form(""),
     seller: User = Depends(require_seller),
@@ -214,7 +230,7 @@ def edit_product(
     if product.status != ProductStatus.PENDING:
         raise HTTPException(status_code=409, detail="Редактировать можно только товары в статусе «На модерации».")
 
-    data = _validate_basic(name, price, sizes, description)
+    data = _validate_basic(name, price, sizes, description, stock)
     new_filename = _save_upload(image)
 
     old_filename = product.image_filename
@@ -222,6 +238,7 @@ def edit_product(
     product.price = data.price
     product.sizes = data.sizes
     product.description = data.description
+    product.stock = data.stock
     image_changed = False
     if new_filename is not None:
         product.image_filename = new_filename

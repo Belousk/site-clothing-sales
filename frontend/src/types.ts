@@ -18,6 +18,7 @@ export interface Product {
   description: string;
   price: string;
   sizes: string[];
+  stock: number;
   image_url: string | null;
   status: ProductStatus;
   status_label: string;

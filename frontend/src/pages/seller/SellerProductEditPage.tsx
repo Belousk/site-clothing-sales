@@ -67,6 +67,7 @@ export default function SellerProductEditPage() {
             price: product.price,
             sizes: product.sizes.join(", "),
             description: product.description,
+            stock: String(product.stock),
             imageUrl: product.image_url,
           }}
           onSubmit={async (form) => {

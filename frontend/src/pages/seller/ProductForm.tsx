@@ -9,6 +9,7 @@ interface Props {
     price: string;
     sizes: string;
     description: string;
+    stock: string;
     imageUrl: string | null;
   };
   submitLabel: string;
@@ -21,6 +22,7 @@ export default function ProductForm({ initial, submitLabel, onSubmit, showRemove
   const [price, setPrice] = useState(initial?.price ?? "");
   const [sizes, setSizes] = useState(initial?.sizes ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
+  const [stock, setStock] = useState(initial?.stock ?? "0");
   const [removeImage, setRemoveImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -92,6 +94,18 @@ export default function ProductForm({ initial, submitLabel, onSubmit, showRemove
           rows={5}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+        />
+      </label>
+
+      <label className="form-row">
+        <span>Остаток на складе</span>
+        <input
+          name="stock"
+          type="number"
+          min={0}
+          required
+          value={stock}
+          onChange={(e) => setStock(e.target.value)}
         />
       </label>
 

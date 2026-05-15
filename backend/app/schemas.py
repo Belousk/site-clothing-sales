@@ -81,6 +81,7 @@ class ProductOut(BaseModel):
     description: str
     price: Decimal
     sizes: list[str]
+    stock: int
     image_url: str | None
     status: ProductStatus
     status_label: str
@@ -98,6 +99,7 @@ class ProductOut(BaseModel):
             description=p.description or "",
             price=p.price,
             sizes=p.sizes_list,
+            stock=p.stock,
             image_url=f"/uploads/{p.image_filename}" if p.image_filename else None,
             status=p.status,
             status_label=PRODUCT_STATUS_LABELS_RU.get(p.status, p.status.value),
