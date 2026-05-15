@@ -14,6 +14,7 @@ export default function CatalogDetailPage() {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [busy, setBusy] = useState(false);
 
@@ -21,18 +22,23 @@ export default function CatalogDetailPage() {
     if (!id) return;
     setError(null);
     setProduct(null);
+    setSelectedSize("");
     api
       .get<Product>(`/api/catalog/${id}`)
-      .then(setProduct)
+      .then((p) => {
+        setProduct(p);
+        const available = p.variants.find((v) => v.stock > 0);
+        if (available) setSelectedSize(available.size);
+      })
       .catch((err) => setError(err instanceof ApiError ? err.detail : "Не удалось загрузить."));
   }, [id]);
 
   async function addToCart() {
-    if (!product) return;
+    if (!product || !selectedSize) return;
     setBusy(true);
     setError(null);
     try {
-      await api.post("/api/cart/add", { product_id: product.id, quantity });
+      await api.post("/api/cart/add", { product_id: product.id, selected_size: selectedSize, quantity });
       navigate("/cart");
     } catch (err) {
       setError(err instanceof ApiError ? err.detail : "Не удалось добавить в корзину.");
@@ -68,6 +74,9 @@ export default function CatalogDetailPage() {
   }
 
   const canBuy = user === null || user.role === "buyer";
+  const currentVariant = product.variants.find((v) => v.size === selectedSize);
+  const sizeStock = currentVariant?.stock ?? 0;
+  const maxQty = Math.min(99, sizeStock);
 
   return (
     <section className="section">
@@ -85,12 +94,36 @@ export default function CatalogDetailPage() {
             <h1>{product.name}</h1>
             <div className="product-detail__price">{formatPrice(product.price)} ₽</div>
 
-            {product.sizes.length > 0 && (
-              <div className="muted">Размеры: {product.sizes.join(", ")}</div>
+            {product.variants.length > 0 && (
+              <div style={{ margin: "12px 0" }}>
+                <div className="muted small" style={{ marginBottom: 6 }}>Размер:</div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {product.variants.map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      className={`btn btn--small ${v.size === selectedSize ? "btn--primary" : "btn--ghost"}`}
+                      disabled={v.stock <= 0}
+                      onClick={() => {
+                        setSelectedSize(v.size);
+                        setQuantity(1);
+                      }}
+                      title={v.stock > 0 ? `В наличии: ${v.stock} шт.` : "Нет в наличии"}
+                    >
+                      {v.size}
+                      {v.stock <= 0 && " ✕"}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             <div className="muted">
-              {product.stock > 0 ? `В наличии: ${product.stock} шт.` : "Нет в наличии"}
+              {selectedSize && sizeStock > 0
+                ? `В наличии (${selectedSize}): ${sizeStock} шт.`
+                : product.stock > 0
+                  ? `Общий остаток: ${product.stock} шт.`
+                  : "Нет в наличии"}
             </div>
 
             {product.description && <p>{product.description}</p>}
@@ -104,14 +137,19 @@ export default function CatalogDetailPage() {
                   <input
                     type="number"
                     min={1}
-                    max={Math.min(99, product.stock)}
+                    max={maxQty}
                     value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, Math.min(product.stock, 99, Number(e.target.value) || 1)))}
+                    onChange={(e) => setQuantity(Math.max(1, Math.min(maxQty, Number(e.target.value) || 1)))}
                   />
                 </label>
                 {user ? (
-                  <button className="btn btn--primary" type="button" onClick={addToCart} disabled={busy || product.stock <= 0}>
-                    {busy ? "Добавляем…" : product.stock <= 0 ? "Нет в наличии" : "В корзину"}
+                  <button
+                    className="btn btn--primary"
+                    type="button"
+                    onClick={addToCart}
+                    disabled={busy || sizeStock <= 0 || !selectedSize}
+                  >
+                    {busy ? "Добавляем…" : sizeStock <= 0 || !selectedSize ? "Выберите размер" : "В корзину"}
                   </button>
                 ) : (
                   <Link to={`/login?next=/catalog/${product.id}`} className="btn btn--primary">

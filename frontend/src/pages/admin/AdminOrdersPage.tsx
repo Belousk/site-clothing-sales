@@ -64,7 +64,10 @@ export default function AdminOrdersPage() {
                   <ul className="order-items">
                     {o.items.map((it) => (
                       <li key={it.id}>
-                        <div>{it.product_name}</div>
+                        <div>
+                          {it.product_name}
+                          {it.selected_size && <span className="muted small"> ({it.selected_size})</span>}
+                        </div>
                         <div className="muted small">
                           {it.quantity} × {formatPrice(it.product_price)} ₽
                         </div>

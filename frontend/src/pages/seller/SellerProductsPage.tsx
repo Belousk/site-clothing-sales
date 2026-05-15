@@ -70,7 +70,12 @@ export default function SellerProductsPage() {
                 <div className="product-card__body">
                   <h3>{p.name}</h3>
                   <div className="product-card__price">{formatPrice(p.price)} ₽</div>
-                  <div className="muted small">Остаток: {p.stock} шт.</div>
+                  <div className="muted small">
+                    Остаток: {p.stock} шт.
+                    {p.variants.length > 0 && (
+                      <> ({p.variants.map((v) => `${v.size}: ${v.stock}`).join(", ")})</>
+                    )}
+                  </div>
                   <StatusTag status={p.status} label={p.status_label} kind="product" />
                   {p.status === "rejected" && p.rejection_reason && (
                     <p className="muted small">Причина отказа: {p.rejection_reason}</p>

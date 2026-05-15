@@ -110,6 +110,11 @@ class Product(Base):
     )
 
     seller: Mapped[User] = relationship(back_populates="products")
+    variants: Mapped[list["ProductVariant"]] = relationship(
+        back_populates="product",
+        cascade="all, delete-orphan",
+        order_by="ProductVariant.id",
+    )
 
     @property
     def status_label(self) -> str:
@@ -120,9 +125,27 @@ class Product(Base):
         return [s.strip() for s in self.sizes.split(",") if s.strip()]
 
 
+class ProductVariant(Base):
+    """Вариант товара: конкретный размер и его остаток на складе."""
+
+    __tablename__ = "product_variants"
+    __table_args__ = (UniqueConstraint("product_id", "size", name="uq_variant_product_size"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    product_id: Mapped[int] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    size: Mapped[str] = mapped_column(String(8), nullable=False)
+    stock: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    product: Mapped[Product] = relationship(back_populates="variants")
+
+
 class CartItem(Base):
     __tablename__ = "cart_items"
-    __table_args__ = (UniqueConstraint("buyer_id", "product_id", name="uq_cart_buyer_product"),)
+    __table_args__ = (UniqueConstraint("buyer_id", "product_id", "selected_size", name="uq_cart_buyer_product_size"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     buyer_id: Mapped[int] = mapped_column(
@@ -135,6 +158,7 @@ class CartItem(Base):
         nullable=False,
         index=True,
     )
+    selected_size: Mapped[str] = mapped_column(String(8), nullable=False, default="")
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -277,6 +301,7 @@ class OrderItem(Base):
     product_name: Mapped[str] = mapped_column(String(160), nullable=False)
     product_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     sizes: Mapped[str] = mapped_column(String(200), nullable=False, default="")
+    selected_size: Mapped[str] = mapped_column(String(8), nullable=False, default="")
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
 
     order: Mapped[Order] = relationship(back_populates="items")

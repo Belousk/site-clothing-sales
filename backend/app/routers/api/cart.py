@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, selectinload
 
 from ...database import get_db
-from ...models import CartItem, Product, ProductStatus, User
+from ...models import CartItem, Product, ProductStatus, ProductVariant, User
 from ...schemas import (
     CartAddIn,
     CartItemOut,
@@ -24,7 +24,10 @@ router = APIRouter(prefix="/cart", tags=["cart"])
 def _active_cart(db: Session, buyer_id: int) -> list[CartItem]:
     items = (
         db.query(CartItem)
-        .options(selectinload(CartItem.product).selectinload(Product.seller))
+        .options(
+            selectinload(CartItem.product).selectinload(Product.seller),
+            selectinload(CartItem.product).selectinload(Product.variants),
+        )
         .filter(CartItem.buyer_id == buyer_id)
         .all()
     )
@@ -38,6 +41,7 @@ def _build_cart(items: list[CartItem]) -> CartOut:
             CartItemOut(
                 id=i.id,
                 product=ProductOut.from_model(i.product),
+                selected_size=i.selected_size,
                 quantity=i.quantity,
                 line_total=i.line_total,
             )
@@ -62,18 +66,32 @@ def add_to_cart(
     product = db.get(Product, payload.product_id)
     if product is None or product.status != ProductStatus.PUBLISHED:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Товар не найден.")
-    if product.stock <= 0:
-        raise HTTPException(status_code=400, detail="Товар закончился на складе.")
+    selected = payload.selected_size.strip()
+    if not selected:
+        raise HTTPException(status_code=400, detail="Укажите размер.")
+    variant = (
+        db.query(ProductVariant)
+        .filter(ProductVariant.product_id == product.id, ProductVariant.size == selected)
+        .first()
+    )
+    if variant is None:
+        raise HTTPException(status_code=400, detail=f"Размер «{selected}» недоступен.")
+    if variant.stock <= 0:
+        raise HTTPException(status_code=400, detail=f"Размер «{selected}» закончился на складе.")
     existing = (
         db.query(CartItem)
-        .filter(CartItem.buyer_id == buyer.id, CartItem.product_id == payload.product_id)
+        .filter(
+            CartItem.buyer_id == buyer.id,
+            CartItem.product_id == payload.product_id,
+            CartItem.selected_size == selected,
+        )
         .first()
     )
     if existing is None:
-        qty = min(payload.quantity, product.stock)
-        db.add(CartItem(buyer_id=buyer.id, product_id=payload.product_id, quantity=qty))
+        qty = min(payload.quantity, variant.stock)
+        db.add(CartItem(buyer_id=buyer.id, product_id=payload.product_id, selected_size=selected, quantity=qty))
     else:
-        existing.quantity = min(existing.quantity + payload.quantity, 99, product.stock)
+        existing.quantity = min(existing.quantity + payload.quantity, 99, variant.stock)
     db.commit()
     return _build_cart(_active_cart(db, buyer.id))
 
@@ -88,8 +106,13 @@ def update_quantity(
     item = db.get(CartItem, item_id)
     if item is None or item.buyer_id != buyer.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Позиция не найдена.")
-    product = db.get(Product, item.product_id)
-    max_qty = min(payload.quantity, product.stock) if product else payload.quantity
+    variant = (
+        db.query(ProductVariant)
+        .filter(ProductVariant.product_id == item.product_id, ProductVariant.size == item.selected_size)
+        .first()
+    )
+    max_stock = variant.stock if variant else 99
+    max_qty = min(payload.quantity, max_stock)
     item.quantity = max(1, max_qty)
     db.commit()
     return _build_cart(_active_cart(db, buyer.id))

@@ -76,8 +76,8 @@ export default function OrderDetailPage() {
                 <li key={it.id}>
                   <div>
                     <div>{it.product_name}</div>
-                    {it.sizes.length > 0 && (
-                      <div className="muted small">Размеры: {it.sizes.join(", ")}</div>
+                    {it.selected_size && (
+                      <div className="muted small">Размер: {it.selected_size}</div>
                     )}
                   </div>
                   <div className="muted small">{it.quantity} × {formatPrice(it.product_price)} ₽</div>
