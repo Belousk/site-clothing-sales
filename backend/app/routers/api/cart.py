@@ -62,15 +62,18 @@ def add_to_cart(
     product = db.get(Product, payload.product_id)
     if product is None or product.status != ProductStatus.PUBLISHED:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Товар не найден.")
+    if product.stock <= 0:
+        raise HTTPException(status_code=400, detail="Товар закончился на складе.")
     existing = (
         db.query(CartItem)
         .filter(CartItem.buyer_id == buyer.id, CartItem.product_id == payload.product_id)
         .first()
     )
     if existing is None:
-        db.add(CartItem(buyer_id=buyer.id, product_id=payload.product_id, quantity=payload.quantity))
+        qty = min(payload.quantity, product.stock)
+        db.add(CartItem(buyer_id=buyer.id, product_id=payload.product_id, quantity=qty))
     else:
-        existing.quantity = min(existing.quantity + payload.quantity, 99)
+        existing.quantity = min(existing.quantity + payload.quantity, 99, product.stock)
     db.commit()
     return _build_cart(_active_cart(db, buyer.id))
 
@@ -85,7 +88,9 @@ def update_quantity(
     item = db.get(CartItem, item_id)
     if item is None or item.buyer_id != buyer.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Позиция не найдена.")
-    item.quantity = payload.quantity
+    product = db.get(Product, item.product_id)
+    max_qty = min(payload.quantity, product.stock) if product else payload.quantity
+    item.quantity = max(1, max_qty)
     db.commit()
     return _build_cart(_active_cart(db, buyer.id))
 

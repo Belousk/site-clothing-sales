@@ -89,6 +89,10 @@ export default function CatalogDetailPage() {
               <div className="muted">Размеры: {product.sizes.join(", ")}</div>
             )}
 
+            <div className="muted">
+              {product.stock > 0 ? `В наличии: ${product.stock} шт.` : "Нет в наличии"}
+            </div>
+
             {product.description && <p>{product.description}</p>}
 
             <ErrorBox message={error} />
@@ -100,14 +104,14 @@ export default function CatalogDetailPage() {
                   <input
                     type="number"
                     min={1}
-                    max={99}
+                    max={Math.min(99, product.stock)}
                     value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, Math.min(99, Number(e.target.value) || 1)))}
+                    onChange={(e) => setQuantity(Math.max(1, Math.min(product.stock, 99, Number(e.target.value) || 1)))}
                   />
                 </label>
                 {user ? (
-                  <button className="btn btn--primary" type="button" onClick={addToCart} disabled={busy}>
-                    {busy ? "Добавляем…" : "В корзину"}
+                  <button className="btn btn--primary" type="button" onClick={addToCart} disabled={busy || product.stock <= 0}>
+                    {busy ? "Добавляем…" : product.stock <= 0 ? "Нет в наличии" : "В корзину"}
                   </button>
                 ) : (
                   <Link to={`/login?next=/catalog/${product.id}`} className="btn btn--primary">

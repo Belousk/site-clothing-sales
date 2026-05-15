@@ -89,6 +89,9 @@ export default function CatalogPage() {
                   {p.sizes.length > 0 && (
                     <div className="muted small">Размеры: {p.sizes.join(", ")}</div>
                   )}
+                  <div className="muted small">
+                    {p.stock > 0 ? `В наличии: ${p.stock} шт.` : "Нет в наличии"}
+                  </div>
                 </div>
               </Link>
             ))}
