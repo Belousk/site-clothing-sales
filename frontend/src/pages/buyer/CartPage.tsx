@@ -60,7 +60,6 @@ export default function CartPage() {
     <section className="section">
       <div className="container">
         <div className="section-header">
-          <span className="eyebrow">UC-2</span>
           <h2>Корзина</h2>
         </div>
 

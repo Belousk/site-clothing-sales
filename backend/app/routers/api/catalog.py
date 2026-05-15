@@ -1,4 +1,4 @@
-"""Публичный каталог опубликованных товаров (UC-2)."""
+"""Публичный каталог опубликованных товаров."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status

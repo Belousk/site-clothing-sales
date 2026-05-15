@@ -26,7 +26,6 @@ export default function SellerOrdersPage() {
     <section className="section">
       <div className="container">
         <div className="section-header">
-          <span className="eyebrow">UC-5</span>
           <h2>Заказы со своими товарами</h2>
         </div>
         <ErrorBox message={error} />

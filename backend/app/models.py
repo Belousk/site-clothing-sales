@@ -24,7 +24,7 @@ ROLE_LABELS_RU: dict[UserRole, str] = {
 
 
 class ProductStatus(str, enum.Enum):
-    """Статус заявки на публикацию товара (UC-6 / UC-7)."""
+    """Статус заявки на публикацию товара."""
 
     PENDING = "pending"
     PUBLISHED = "published"
@@ -175,10 +175,10 @@ class CartItem(Base):
 
 
 class OrderStatus(str, enum.Enum):
-    """Статус заказа (UC-3 / UC-4)."""
+    """Статус заказа."""
 
     CREATED = "created"  # оформлен, ожидает оплаты
-    PAID = "paid"  # оплачен (UC-4)
+    PAID = "paid"  # оплачен
     CANCELLED = "cancelled"  # отменён до оплаты
 
 
@@ -190,7 +190,7 @@ ORDER_STATUS_LABELS_RU: dict[OrderStatus, str] = {
 
 
 class DeliveryStatus(str, enum.Enum):
-    """Статус доставки заказа (UC-5). Имеет смысл только после оплаты."""
+    """Статус доставки заказа. Имеет смысл только после оплаты."""
 
     PROCESSING = "processing"  # ждёт отправки
     SHIPPED = "shipped"  # передан в доставку
@@ -242,7 +242,7 @@ class Order(Base):
         nullable=False,
     )
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    # UC-5: статус доставки. Активен после перехода заказа в PAID.
+    # Статус доставки. Активен после перехода заказа в PAID.
     delivery_status: Mapped[DeliveryStatus] = mapped_column(
         Enum(DeliveryStatus, native_enum=False, length=16),
         nullable=False,
@@ -313,7 +313,7 @@ class OrderItem(Base):
 
 
 class Receipt(Base):
-    """Чек об оплате заказа (UC-4)."""
+    """Чек об оплате заказа."""
 
     __tablename__ = "receipts"
 

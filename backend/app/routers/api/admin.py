@@ -1,4 +1,4 @@
-"""API администратора: модерация (UC-7) и управление доставкой (UC-5)."""
+"""API администратора: модерация и управление доставкой."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -118,7 +118,7 @@ def reject_product(
     return ProductOut.from_model(product)
 
 
-# ---------- UC-5 ----------
+# ---------- Доставка ----------
 
 
 @router.get("/orders", response_model=list[OrderOut])

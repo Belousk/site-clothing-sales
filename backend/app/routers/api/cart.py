@@ -1,4 +1,4 @@
-"""Корзина покупателя (UC-2)."""
+"""Корзина покупателя."""
 from __future__ import annotations
 
 from decimal import Decimal

@@ -317,7 +317,7 @@ def delete_product(
     return MessageResponse()
 
 
-# ---------- UC-5 ----------
+# ---------- Доставка ----------
 
 
 def _orders_with_seller_items(db: Session, seller_id: int) -> list[Order]:

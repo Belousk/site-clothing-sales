@@ -1,4 +1,4 @@
-"""Генерация чеков (UC-4): номер, transaction_id, PDF на диск."""
+"""Генерация чеков: номер, transaction_id, PDF на диск."""
 from __future__ import annotations
 
 import secrets

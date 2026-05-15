@@ -38,7 +38,6 @@ export default function SellerProductsPage() {
     <section className="section">
       <div className="container">
         <div className="section-header">
-          <span className="eyebrow">UC-6</span>
           <h2>Мои товары</h2>
           <Link to="/seller/products/new" className="btn btn--primary btn--small">
             Добавить товар

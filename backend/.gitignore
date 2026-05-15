@@ -16,6 +16,6 @@ env/
 uploads/*
 !uploads/.gitkeep
 
-# PDF чеков (UC-4)
+# PDF чеков
 receipts/*
 !receipts/.gitkeep

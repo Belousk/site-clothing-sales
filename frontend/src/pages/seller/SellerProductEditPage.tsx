@@ -60,7 +60,6 @@ export default function SellerProductEditPage() {
     <section className="section">
       <div className="container narrow">
         <div className="section-header">
-          <span className="eyebrow">UC-6 • редактирование</span>
           <h2>{product.name}</h2>
         </div>
         <ProductForm

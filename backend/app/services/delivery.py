@@ -1,4 +1,4 @@
-"""UC-5: переходы статуса доставки. Общая логика для админа и продавца."""
+"""Переходы статуса доставки. Общая логика для админа и продавца."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
