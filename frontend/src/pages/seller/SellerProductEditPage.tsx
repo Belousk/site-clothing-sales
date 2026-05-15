@@ -52,6 +52,10 @@ export default function SellerProductEditPage() {
     );
   }
 
+  const sizeStocks = product.variants.length > 0
+    ? product.variants.map((v) => ({ size: v.size, stock: String(v.stock) }))
+    : [{ size: "", stock: "0" }];
+
   return (
     <section className="section">
       <div className="container narrow">
@@ -65,9 +69,8 @@ export default function SellerProductEditPage() {
           initial={{
             name: product.name,
             price: product.price,
-            sizes: product.sizes.join(", "),
             description: product.description,
-            stock: String(product.stock),
+            sizeStocks,
             imageUrl: product.image_url,
           }}
           onSubmit={async (form) => {

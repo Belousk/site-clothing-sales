@@ -12,6 +12,12 @@ export interface User {
 
 export type ProductStatus = "pending" | "published" | "rejected";
 
+export interface ProductVariant {
+  id: number;
+  size: string;
+  stock: number;
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -19,6 +25,7 @@ export interface Product {
   price: string;
   sizes: string[];
   stock: number;
+  variants: ProductVariant[];
   image_url: string | null;
   status: ProductStatus;
   status_label: string;
@@ -32,6 +39,7 @@ export interface Product {
 export interface CartItem {
   id: number;
   product: Product;
+  selected_size: string;
   quantity: number;
   line_total: string;
 }
@@ -51,6 +59,7 @@ export interface OrderItem {
   product_name: string;
   product_price: string;
   sizes: string[];
+  selected_size: string;
   quantity: number;
   line_total: string;
 }

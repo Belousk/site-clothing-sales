@@ -86,8 +86,10 @@ export default function CatalogPage() {
                 <div className="product-card__body">
                   <h3>{p.name}</h3>
                   <div className="product-card__price">{formatPrice(p.price)} ₽</div>
-                  {p.sizes.length > 0 && (
-                    <div className="muted small">Размеры: {p.sizes.join(", ")}</div>
+                  {p.variants.length > 0 && (
+                    <div className="muted small">
+                      Размеры: {p.variants.map((v) => `${v.size}${v.stock <= 0 ? " ✕" : ""}`).join(", ")}
+                    </div>
                   )}
                   <div className="muted small">
                     {p.stock > 0 ? `В наличии: ${p.stock} шт.` : "Нет в наличии"}

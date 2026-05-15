@@ -20,6 +20,7 @@ from ...models import (
     OrderStatus,
     Product,
     ProductStatus,
+    ProductVariant,
     Receipt,
     User,
     UserRole,
@@ -43,7 +44,9 @@ PHONE_PATTERN = re.compile(r"^[\d\+\-\(\) ]{6,40}$")
 def _active_cart(db: Session, buyer_id: int) -> list[CartItem]:
     items = (
         db.query(CartItem)
-        .options(selectinload(CartItem.product))
+        .options(
+            selectinload(CartItem.product).selectinload(Product.variants),
+        )
         .filter(CartItem.buyer_id == buyer_id)
         .all()
     )
@@ -53,7 +56,10 @@ def _active_cart(db: Session, buyer_id: int) -> list[CartItem]:
 def _own_order_or_404(db: Session, buyer: User, order_id: int) -> Order:
     order = (
         db.query(Order)
-        .options(selectinload(Order.items).selectinload(OrderItem.product), selectinload(Order.receipt))
+        .options(
+            selectinload(Order.items).selectinload(OrderItem.product).selectinload(Product.variants),
+            selectinload(Order.receipt),
+        )
         .filter(Order.id == order_id, Order.buyer_id == buyer.id)
         .first()
     )
@@ -114,13 +120,21 @@ def checkout(
     if len(comment_clean) > COMMENT_MAX:
         raise HTTPException(status_code=400, detail=f"Комментарий не должен быть длиннее {COMMENT_MAX} символов.")
 
+    variants_map: dict[tuple[int, str], ProductVariant] = {}
     for ci in items:
-        if ci.product.stock < ci.quantity:
+        variant = (
+            db.query(ProductVariant)
+            .filter(ProductVariant.product_id == ci.product.id, ProductVariant.size == ci.selected_size)
+            .first()
+        )
+        if variant is None or variant.stock < ci.quantity:
+            avail = variant.stock if variant else 0
             raise HTTPException(
                 status_code=400,
-                detail=f"Недостаточно товара «{ci.product.name}» на складе "
-                f"(доступно {ci.product.stock}, в корзине {ci.quantity}).",
+                detail=f"Недостаточно товара «{ci.product.name}» (размер {ci.selected_size}) на складе "
+                f"(доступно {avail}, в корзине {ci.quantity}).",
             )
+        variants_map[(ci.product.id, ci.selected_size)] = variant
 
     total = sum((i.line_total for i in items), Decimal("0.00"))
     order = Order(
@@ -135,7 +149,9 @@ def checkout(
     db.add(order)
     db.flush()
     for ci in items:
-        ci.product.stock -= ci.quantity
+        variant = variants_map[(ci.product.id, ci.selected_size)]
+        variant.stock -= ci.quantity
+        ci.product.stock = sum(v.stock for v in ci.product.variants)
         db.add(
             OrderItem(
                 order_id=order.id,
@@ -143,6 +159,7 @@ def checkout(
                 product_name=ci.product.name,
                 product_price=ci.product.price,
                 sizes=ci.product.sizes,
+                selected_size=ci.selected_size,
                 quantity=ci.quantity,
             )
         )
@@ -204,8 +221,18 @@ def cancel(
         raise HTTPException(status_code=409, detail="Отменить можно только неоплаченный заказ.")
     order.status = OrderStatus.CANCELLED
     for oi in order.items:
-        if oi.product is not None:
-            oi.product.stock += oi.quantity
+        if oi.product is not None and oi.selected_size:
+            variant = (
+                db.query(ProductVariant)
+                .filter(
+                    ProductVariant.product_id == oi.product.id,
+                    ProductVariant.size == oi.selected_size,
+                )
+                .first()
+            )
+            if variant is not None:
+                variant.stock += oi.quantity
+            oi.product.stock = sum(v.stock for v in oi.product.variants)
     db.commit()
     db.refresh(order)
     return OrderOut.from_model(order)

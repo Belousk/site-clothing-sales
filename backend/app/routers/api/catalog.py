@@ -6,7 +6,7 @@ from sqlalchemy import desc, func
 from sqlalchemy.orm import Session, selectinload
 
 from ...database import get_db
-from ...models import Product, ProductStatus
+from ...models import Product, ProductStatus, ProductVariant
 from ...schemas import ProductOut
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/catalog", tags=["catalog"])
 def list_catalog(q: str = Query("", description="Поиск по названию"), db: Session = Depends(get_db)):
     query = (
         db.query(Product)
-        .options(selectinload(Product.seller))
+        .options(selectinload(Product.seller), selectinload(Product.variants))
         .filter(Product.status == ProductStatus.PUBLISHED)
     )
     q_clean = q.strip()
@@ -31,7 +31,7 @@ def list_catalog(q: str = Query("", description="Поиск по названи�
 def catalog_detail(product_id: int, db: Session = Depends(get_db)):
     product = (
         db.query(Product)
-        .options(selectinload(Product.seller))
+        .options(selectinload(Product.seller), selectinload(Product.variants))
         .filter(Product.id == product_id, Product.status == ProductStatus.PUBLISHED)
         .first()
     )

@@ -55,7 +55,7 @@ def list_products(
     valid = {s.value for s in ProductStatus} | {"all"}
     if status_filter not in valid:
         status_filter = "pending"
-    query = db.query(Product).options(selectinload(Product.seller))
+    query = db.query(Product).options(selectinload(Product.seller), selectinload(Product.variants))
     if status_filter != "all":
         query = query.filter(Product.status == ProductStatus(status_filter))
     products = query.order_by(desc(Product.created_at)).all()
@@ -66,7 +66,7 @@ def list_products(
 def product_detail(product_id: int, _: User = Depends(require_admin), db: Session = Depends(get_db)):
     product = (
         db.query(Product)
-        .options(selectinload(Product.seller))
+        .options(selectinload(Product.seller), selectinload(Product.variants))
         .filter(Product.id == product_id)
         .first()
     )
@@ -98,7 +98,7 @@ def reject_product(
 ):
     product = (
         db.query(Product)
-        .options(selectinload(Product.seller))
+        .options(selectinload(Product.seller), selectinload(Product.variants))
         .filter(Product.id == product_id)
         .first()
     )

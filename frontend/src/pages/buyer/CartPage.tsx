@@ -89,8 +89,8 @@ export default function CartPage() {
                     <Link to={`/catalog/${item.product.id}`} className="cart-row__title">
                       {item.product.name}
                     </Link>
-                    {item.product.sizes.length > 0 && (
-                      <div className="muted small">Размеры: {item.product.sizes.join(", ")}</div>
+                    {item.selected_size && (
+                      <div className="muted small">Размер: {item.selected_size}</div>
                     )}
                     <div className="muted small">{formatPrice(item.product.price)} ₽ за шт.</div>
                   </div>

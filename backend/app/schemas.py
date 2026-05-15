@@ -73,6 +73,14 @@ class LoginIn(BaseModel):
 # ---------- catalog / products ----------
 
 
+class VariantOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    size: str
+    stock: int
+
+
 class ProductOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -82,6 +90,7 @@ class ProductOut(BaseModel):
     price: Decimal
     sizes: list[str]
     stock: int
+    variants: list[VariantOut]
     image_url: str | None
     status: ProductStatus
     status_label: str
@@ -93,6 +102,10 @@ class ProductOut(BaseModel):
 
     @classmethod
     def from_model(cls, p) -> "ProductOut":  # noqa: ANN001
+        variants = [
+            VariantOut(id=v.id, size=v.size, stock=v.stock)
+            for v in (p.variants if p.variants else [])
+        ]
         return cls(
             id=p.id,
             name=p.name,
@@ -100,6 +113,7 @@ class ProductOut(BaseModel):
             price=p.price,
             sizes=p.sizes_list,
             stock=p.stock,
+            variants=variants,
             image_url=f"/uploads/{p.image_filename}" if p.image_filename else None,
             status=p.status,
             status_label=PRODUCT_STATUS_LABELS_RU.get(p.status, p.status.value),
@@ -117,6 +131,7 @@ class ProductOut(BaseModel):
 class CartItemOut(BaseModel):
     id: int
     product: ProductOut
+    selected_size: str
     quantity: int
     line_total: Decimal
 
@@ -129,6 +144,7 @@ class CartOut(BaseModel):
 
 class CartAddIn(BaseModel):
     product_id: int
+    selected_size: str
     quantity: int = Field(default=1, ge=1, le=99)
 
 
@@ -145,6 +161,7 @@ class OrderItemOut(BaseModel):
     product_name: str
     product_price: Decimal
     sizes: list[str]
+    selected_size: str
     quantity: int
     line_total: Decimal
 
@@ -156,6 +173,7 @@ class OrderItemOut(BaseModel):
             product_name=item.product_name,
             product_price=item.product_price,
             sizes=[s.strip() for s in (item.sizes or "").split(",") if s.strip()],
+            selected_size=item.selected_size or "",
             quantity=item.quantity,
             line_total=item.line_total,
         )

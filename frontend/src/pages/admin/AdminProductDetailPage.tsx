@@ -95,8 +95,10 @@ export default function AdminProductDetailPage() {
             <div className="muted small">Продавец: {product.seller_username ?? "—"}</div>
             <div className="muted small">Создан: {formatDateTime(product.created_at)}</div>
             <div className="product-detail__price">{formatPrice(product.price)} ₽</div>
-            {product.sizes.length > 0 && (
-              <div className="muted">Размеры: {product.sizes.join(", ")}</div>
+            {product.variants.length > 0 && (
+              <div className="muted">
+                Размеры: {product.variants.map((v) => `${v.size} (${v.stock} шт.)`).join(", ")}
+              </div>
             )}
             {product.description && <p>{product.description}</p>}
 
