@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.env
+*.db
+*.sqlite3
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Загруженные пользователями файлы (фото товаров)
+uploads/*
+!uploads/.gitkeep
+
+# PDF чеков
+receipts/*
+!receipts/.gitkeep
